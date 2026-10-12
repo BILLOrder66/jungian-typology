@@ -91,6 +91,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 .blend .b i{display:block;height:100%;background:var(--gold)}
 .blend em{font-style:normal;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
 .copybox{width:100%;margin-top:10px;padding:12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:.9rem;resize:none}
+.longtype{max-width:46ch;margin:14px auto 0}
+.lbox{padding:16px 0;border-top:1px solid var(--line)}
+.lbox h3{font-size:1.25rem;margin-bottom:2px}
+.lbox p{margin:8px 0 0}
+.lbox .str{font-size:.9rem;color:var(--muted)}
+.read p{margin:0 0 .9em}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -172,6 +178,47 @@ const FN = {
   Si:'Introverted Sensation: comparing now against a rich memory of what has been.',
   Ne:'Extraverted Intuition: seeing possibilities and connections everywhere.',
   Ni:'Introverted Intuition: converging on a single deep insight about where things lead.'
+};
+
+const LETTERS = {
+  E:['Extraversion','Energy flows outward. You think by interacting, build momentum from people and activity, and tend to show what is on your mind. In Jung\'s terms, attention is drawn to the outer world of people and things.'],
+  I:['Introversion','Energy flows inward. You reflect before acting, recharge alone, and tend to save your most considered thoughts for fewer, deeper exchanges. In Jung\'s terms, attention is drawn to the inner world of ideas and impressions.'],
+  S:['Sensing','You take in information through the senses and trust what is concrete, present, and proven. Facts, details, and precedent carry weight.'],
+  N:['Intuition','You take in information through patterns, meaning, and possibility. Connections and implications register first, and details serve the bigger picture.'],
+  T:['Thinking','You decide by impersonal logic: cause and effect, consistency, and objective criteria. Being fair to the principle matters, even when the answer is uncomfortable.'],
+  F:['Feeling','You decide by values: what matters to you and to the people involved. Harmony and authenticity count, and you weigh how a choice lands on those it affects.'],
+  J:['Judging','You prefer a decided, organized outer life. Plans, closure, and clear expectations let you move, and open questions feel like loose ends. The word describes orientation to the outer world, and has nothing to do with being judgmental.'],
+  P:['Perceiving','You prefer a flexible, adaptive outer life. You keep options open, gather more information, and improvise comfortably. The word describes orientation to the outer world, and has nothing to do with being perceptive.']
+};
+
+const TYPE_LONG = {
+  INTJ:'INTJs build a private model of how things fit together and then work steadily to make the future match it. Introverted Intuition supplies the vision, and Extraverted Thinking turns it into plans and decisions.',
+  INTP:'INTPs test ideas for internal consistency and enjoy taking a problem apart to see how it really works. Introverted Thinking sets the standard, and Extraverted Intuition supplies a steady stream of possibilities to test.',
+  ENTJ:'ENTJs organize people, time, and resources toward a goal and decide quickly once the logic is clear. Extraverted Thinking drives the execution, and Introverted Intuition supplies the long view that points the effort.',
+  ENTP:'ENTPs generate possibilities and test them by argument, often switching sides to see what holds. Extraverted Intuition scans for angles, and Introverted Thinking checks whether they make sense.',
+  INFJ:'INFJs sense underlying patterns in people and situations and hold a quiet conviction about where things should go. Introverted Intuition forms the insight, and Extraverted Feeling shapes how they act on it with others.',
+  INFP:'INFPs measure choices against a deep inner sense of what is authentic and worthwhile. Introverted Feeling sets the compass, and Extraverted Intuition explores the possibilities for living by it.',
+  ENFJ:'ENFJs read the needs and potential of the people around them and organize to help them grow. Extraverted Feeling tunes to the group, and Introverted Intuition sees where each person could go.',
+  ENFP:'ENFPs spot possibility in people and situations and energize others to explore it. Extraverted Intuition opens the options, and Introverted Feeling checks them against personal values.',
+  ISTJ:'ISTJs rely on accumulated experience and a strong sense of duty to keep things dependable. Introverted Sensing holds the record of what has worked, and Extraverted Thinking turns it into orderly action.',
+  ISFJ:'ISFJs remember what matters to the people they care for and quietly make sure it is honored. Introverted Sensing holds the detail, and Extraverted Feeling directs it toward others\' needs.',
+  ESTJ:'ESTJs bring structure, clear standards, and follow-through to whatever they take on. Extraverted Thinking organizes the outer world, and Introverted Sensing anchors it in proven practice.',
+  ESFJ:'ESFJs attend to the needs of the group and work to keep people connected and cared for. Extraverted Feeling reads the room, and Introverted Sensing supplies the traditions and details that make people feel at home.',
+  ISTP:'ISTPs analyze how things work and step in with calm precision when something needs doing. Introverted Thinking builds the logic, and Extraverted Sensing engages the real situation as it is.',
+  ISFP:'ISFPs act from quiet personal values and an eye for what is real and beautiful in the moment. Introverted Feeling sets the standard, and Extraverted Sensing engages the world with ease and presence.',
+  ESTP:'ESTPs read a situation instantly and act on it, adjusting as conditions shift. Extraverted Sensing takes in the live scene, and Introverted Thinking supplies the practical logic.',
+  ESFP:'ESFPs engage fully with the moment and the people in it, bringing warmth and spontaneity. Extraverted Sensing grounds them in the present, and Introverted Feeling keeps their choices personal.'
+};
+
+const GRIP = {
+  Te:'Under stress it can surface as rigid fault-finding or a feeling of being buried in tasks.',
+  Ti:'Under stress it can surface as cold, hair-splitting criticism.',
+  Fe:'Under stress it can surface as hurt, or a sense of being unappreciated by the group.',
+  Fi:'Under stress it can surface as sudden sensitivity or stubbornness over personal values.',
+  Se:'Under stress it can surface as impulsive indulgence or fixation on details of the moment.',
+  Si:'Under stress it can surface as fixation on bodily details, past mistakes, or routine.',
+  Ne:'Under stress it can surface as a flood of worst-case possibilities.',
+  Ni:'Under stress it can surface as a single dark conviction about what is coming.'
 };
 
 /* ---------- STATE ---------- */
@@ -301,6 +348,11 @@ function renderResult(){
     const win = ca>=2?a:b;
     return `<div class="axis"><span class="${win===a?'on':''}">${a}</span><div class="bar"><i style="left:${pos}%"></i></div><span class="${win===b?'on':''}">${b}</span></div>`;
   };
+  const letterBlock = (a,b,ca,cb) => {
+    const win = ca>=2?a:b, n = win===a?ca:cb;
+    const str = n===3 ? 'Clear preference. This side is your default.' : 'Slight preference. You likely flex toward the other side with little effort.';
+    return `<div class="lbox"><h3>${win}: ${LETTERS[win][0]}</h3>${axisRow(a,b,ca,cb)}<p>${LETTERS[win][1]}</p><p class="str">${str}</p></div>`;
+  };
   const share = `My Jungian type: ${code} (${tname}), dominant function ${st.dom}. Archetype: ${top}. Shadow: ${shadow}.`;
 
   app.innerHTML = `<section class="result">
@@ -308,18 +360,25 @@ function renderResult(){
     <div class="type">${code}</div>
     <div class="typename">${tname}</div>
     <p class="lede">${tline}</p>
+    <p class="lede longtype">${TYPE_LONG[code]}</p>
     ${compassSVG(L, st)}
+
+    <div class="sec"><h2>What your four letters mean</h2>
+      ${letterBlock('E','I',L.E,L.I)}${letterBlock('S','N',L.S,L.N)}${letterBlock('T','F',L.T,L.F)}${letterBlock('J','P',L.J,L.P)}
+    </div>
 
     <div class="sec"><h2>How your functions line up</h2>
       <dl class="stackrow">
         <dt>${st.dom}</dt><dd><b>Leads.</b> ${FN[st.dom]}</dd>
         <dt>${st.aux}</dt><dd><b>Supports.</b> ${FN[st.aux]}</dd>
-        <dt>${st.inf}</dt><dd><b>Least developed.</b> ${FN[st.inf]} Stress tends to expose it.</dd>
+        <dt>${st.inf}</dt><dd><b>Least developed.</b> ${FN[st.inf]} ${GRIP[st.inf]}</dd>
       </dl>
     </div>
 
-    <div class="sec"><h2>Where you land on each pair</h2>
-      ${axisRow('E','I',L.E,L.I)}${axisRow('S','N',L.S,L.N)}${axisRow('T','F',L.T,L.F)}${axisRow('J','P',L.J,L.P)}
+    <div class="sec read"><h2>How to read this</h2>
+      <p><b>Preferences, not abilities.</b> Each letter marks the side that feels more natural, the way one hand feels more natural for writing. It says nothing about skill, and everyone uses both sides.</p>
+      <p><b>The middle letters name the functions.</b> S/N and T/F are Jung's four functions. E/I sets which direction each one faces, and J/P shows whether a judging function (T or F) or a perceiving function (S or N) leads in the outer world. That is how the stack above is derived. J/P was added by Myers and Briggs and is not in Jung's original scheme.</p>
+      <p><b>This is a short self-report quiz.</b> It is not the official MBTI&reg; instrument, and a best-fit type is best confirmed with a certified practitioner.</p>
     </div>
 
     <div class="sec"><h2>Your archetype</h2>
